@@ -74,30 +74,28 @@ test('a connection released on no handle goes away', async ({ page }) => {
 });
 
 test('a cable is still selected by a click anywhere away from its handles', async ({ page }) => {
-  const middle = async () =>
-    (await cables(page)).find((c) => c.label === 'Edge from osc to filter')!;
-  // Settled first: a cable still falling is not where it was read.
-  let last = await middle();
+  const id = (await cables(page)).find((c) => c.label === 'Edge from osc to filter')!.id;
+
+  // What the pointer would hit at the middle of the cable is its
+  // interaction path (not clipped out away from the handles) — read, hit
+  // and clicked in one go, as the cable may still be swinging. Without the
+  // real mouse: CaviPointer pushes cables away from it, so on a slow
+  // machine the cable could be gone from under a real click.
   await expect
-    .poll(async () => {
-      const now = await middle();
-      const moved = distance(now.middle, last.middle);
-      last = now;
-      return moved;
-    })
-    .toBeLessThan(0.5);
+    .poll(() =>
+      page.evaluate((edgeId) => {
+        const edge = document.querySelector(`.vue-flow__edge[data-id="${edgeId}"]`)!;
+        const path = edge.querySelector('.vue-flow__edge-interaction') as SVGPathElement;
+        const m = path.getScreenCTM()!;
+        const p = path.getPointAtLength(path.getTotalLength() / 2);
+        const [x, y] = [p.x * m.a + m.e, p.y * m.d + m.f];
+        const hit = document.elementFromPoint(x, y);
+        if (hit !== path) return hit?.getAttribute('class') ?? null;
+        hit.dispatchEvent(new MouseEvent('click', { bubbles: true, clientX: x, clientY: y }));
+        return 'clicked';
+      }, id)
+    )
+    .toBe('clicked');
 
-  // What the pointer would hit there is the cable's interaction path (not
-  // clipped out away from the handles). Checked without moving the real
-  // mouse: CaviPointer pushes cables away from it, so on a slow machine the
-  // cable could be gone from under a real click.
-  const hit = await page.evaluate(({ x, y }) => {
-    const el = document.elementFromPoint(x, y);
-    if (!el?.classList.contains('vue-flow__edge-interaction')) return null;
-    el.dispatchEvent(new MouseEvent('click', { bubbles: true, clientX: x, clientY: y }));
-    return el.closest('.vue-flow__edge')?.getAttribute('data-id') ?? null;
-  }, last.middle);
-  expect(hit).toBe(last.id);
-
-  await expect(page.locator(`.vue-flow__edge[data-id="${last.id}"]`)).toHaveClass(/selected/);
+  await expect(page.locator(`.vue-flow__edge[data-id="${id}"]`)).toHaveClass(/selected/);
 });
