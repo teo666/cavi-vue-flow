@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { BaseEdge, type EdgeProps } from '@vue-flow/core';
+import { BaseEdge, type EdgeProps, type GraphNode } from '@vue-flow/core';
 import { computed, onBeforeUnmount, onMounted, shallowRef, watch } from 'vue';
 import { findHandle, handleCenter, type Anchor } from './anchor';
 import { directionOf, type Cable, type CableStyle } from './cable-world';
@@ -158,7 +158,49 @@ const style = computed(() => ({
   strokeLinecap: 'round' as const,
   ...(props.data?.color ? { stroke: props.data.color } : {}),
   ...props.style,
+  // The pointer goes to the interaction path below (see clipPathData).
+  pointerEvents: 'none' as const,
 }));
+
+/**
+ * Cables are drawn over the nodes, and an edge catches the pointer along a
+ * wide invisible stroke (Vue Flow's interaction path): over a handle, it
+ * would take the press that starts a connection from it — at the cable's
+ * own ends, and over the other handles of its two nodes it hangs across
+ * (a patchbay's neighbouring jacks). So the interaction path is CaviEdge's
+ * own, clipped out around every handle of the two nodes: the cable is
+ * still selected anywhere else, the handles under it still pressed. (The
+ * grips that pull a plug out of an updatable edge are elements of their
+ * own, left alone.)
+ */
+const HANDLE_CLEARANCE = 12;
+const clipId = computed(() => `cavi-edge-clip-${props.id.replace(/[^\w-]/g, '_')}`);
+const clipPathData = computed(() => {
+  const { sx, sy, tx, ty } = ends.value;
+  const holes = [
+    hole(sx, sy, HANDLE_CLEARANCE),
+    hole(tx, ty, HANDLE_CLEARANCE),
+    ...handleHoles(props.sourceNode),
+    ...handleHoles(props.targetNode),
+  ];
+  // Everything (evenodd), less the holes.
+  return `M -1e6 -1e6 H 1e6 V 1e6 H -1e6 Z ${holes.join(' ')}`;
+});
+
+/** A circle of radius `r` at (x, y), as path data. */
+function hole(x: number, y: number, r: number): string {
+  return `M ${x - r} ${y} a ${r} ${r} 0 1 0 ${2 * r} 0 a ${r} ${r} 0 1 0 ${-2 * r} 0 Z`;
+}
+
+/** A hole around every handle of `node`, at least HANDLE_CLEARANCE wide. */
+function handleHoles(node: GraphNode): string[] {
+  const { source, target } = node.handleBounds;
+  return [...(source ?? []), ...(target ?? [])].map((handle) => {
+    const { x, y } = handleCenter(node, handle)!;
+    const r = Math.max(HANDLE_CLEARANCE, Math.hypot(handle.width, handle.height) / 2 + 2);
+    return hole(x, y, r);
+  });
+}
 </script>
 
 <template>
@@ -168,7 +210,19 @@ const style = computed(() => ({
     :style="style"
     :marker-start="markerStart"
     :marker-end="markerEnd"
-    :interaction-width="interactionWidth"
+    :interaction-width="0"
+  />
+  <clipPath :id="clipId">
+    <path :d="clipPathData" clip-rule="evenodd" />
+  </clipPath>
+  <path
+    v-if="interactionWidth !== 0"
+    class="vue-flow__edge-interaction"
+    :d="path"
+    fill="none"
+    stroke-opacity="0"
+    :stroke-width="interactionWidth ?? 20"
+    :clip-path="`url(#${clipId})`"
   />
   <template v-if="plugRadius > 0">
     <circle

@@ -37,6 +37,10 @@
 - [ ] Build as a library: `.d.ts`, `exports` in package.json, `vue` and `@vue-flow/core` as peer
       dependencies.
 - [ ] Publish (cavijs 0.1.0 and cavi 0.3.0, which it needs, are on npm).
-- [ ] End-to-end tests with Playwright on the demos (connect, move a plug, unplug, undo).
+- [x] End-to-end tests with Playwright on the demos (`pnpm test:e2e`): connect, move a plug,
+      unplug, sizes and types refused, undo/redo, the loop resting and waking.
+- [ ] Run them in CI (GitHub Actions), with the unit tests and the typecheck.
+- [ ] A cable hanging across a handle of a third node still takes its presses (CaviEdge clears
+      only the handles of its own two nodes).
 - [ ] Demo on GitHub Pages.
 - [ ] Touch support, checked on mobile.

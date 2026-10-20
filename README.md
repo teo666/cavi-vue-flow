@@ -10,6 +10,7 @@ the very same cable becomes the edge once connected.
 pnpm install
 pnpm dev        # the demo: / (Vue Flow's connection-line example), /patchbay, /stress (100 boxes)
 pnpm test       # CableWorld against the real WASM engine, in Node
+pnpm test:e2e   # the three routes in Chrome, with a real mouse (Playwright)
 pnpm typecheck
 ```
 
@@ -54,8 +55,11 @@ const edgeTypes = { cavi: markRaw(CaviEdge) };
   everything between hangs free — and its node count follows the distance. The cable resists
   bending, so it curves smoothly instead of hanging like a chain; with `followHandles` it also
   leaves each handle along the handle's side (`sourcePosition`/`targetPosition`). Drawn with Vue
-  Flow's
-  `BaseEdge`: selection, markers and the interaction path work on the cable's real shape.
+  Flow's `BaseEdge`: selection and markers work on the cable's real shape, and so does the
+  interaction path (the wide invisible stroke that catches the pointer), which is CaviEdge's own:
+  it leaves out a circle around every handle of the edge's two nodes, so a cable drawn over a
+  handle — its own ends, a neighbouring jack it hangs across — never takes the press that starts
+  a connection from it.
   `data: { color?, cable?: CableStyle }`.
   To draw cables over the nodes — a cable hanging past its target node then shows going into the
   handle instead of disappearing behind the box — give the edges `zIndex: 1001`: nodes sit at 0,
