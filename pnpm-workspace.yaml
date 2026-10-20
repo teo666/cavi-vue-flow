@@ -1,0 +1,4 @@
+allowBuilds:
+  esbuild: true
+  # Picks its Vue 3 build at install time (a dependency of Vue Flow's).
+  vue-demi: true
