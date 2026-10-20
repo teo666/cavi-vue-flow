@@ -6,6 +6,9 @@ nodes, handles, `onConnect`, selection, state — and every edge becomes a cable
 when its nodes move and settles. The connection line is a cable too, pulled out of its handle, and
 the very same cable becomes the edge once connected.
 
+**Demo:** <https://teo666.github.io/cavi-vue-flow/> — Vue Flow's connection-line example, a
+modular-synth patchbay and a stress test, deployed from `main` once CI passes.
+
 ```bash
 pnpm install
 pnpm dev        # the demo: / (Vue Flow's connection-line example), /patchbay, /stress (100 boxes)

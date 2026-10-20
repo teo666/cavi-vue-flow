@@ -33,12 +33,22 @@ jobs:
         run: pnpm typecheck
       - name: Unit tests
         run: pnpm test
+      # Built for GitHub Pages (base /cavi-vue-flow/). 404.html is the page
+      # itself: Pages serves it for /cavi-vue-flow/patchbay and the like,
+      # and the router shows the route.
       - name: Build the demo
-        run: pnpm build
+        run: |
+          pnpm build
+          cp dist/index.html dist/404.html
       # Google Chrome is preinstalled on GitHub's Ubuntu runners, which is
       # what playwright.config.ts uses (channel: 'chrome').
       - name: End-to-end tests
         run: pnpm test:e2e
+      - name: Upload the demo for GitHub Pages
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
       - name: Upload the Playwright report
         if: failure()
         uses: actions/upload-artifact@v4
@@ -48,3 +58,23 @@ jobs:
             playwright-report
             test-results
           retention-days: 7
+
+  # The demo, once everything passed on main: https://teo666.github.io/cavi-vue-flow/
+  # (Settings → Pages → Source: GitHub Actions).
+  pages:
+    needs: check
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    concurrency:
+      group: pages
+      cancel-in-progress: false
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
