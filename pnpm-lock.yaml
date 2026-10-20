@@ -12,8 +12,8 @@ importers:
         specifier: ^1.48.2
         version: 1.48.2(vue@3.5.44(typescript@5.9.3))
       cavijs:
-        specifier: link:../cavijs
-        version: link:../cavijs
+        specifier: ^0.1.0
+        version: 0.1.0
       vue:
         specifier: ^3.5.44
         version: 3.5.44(typescript@5.9.3)
@@ -550,6 +550,12 @@ packages:
 
   birpc@2.9.0:
     resolution: {integrity: sha512-KrayHS5pBi69Xi9JmvoqrIgYGDkD6mcSe/i6YKi3w5kekCLzrX4+nawcXqrj2tIp50Kw/mT/s3p+GVK0A0sKxw==}
+
+  cavi@0.3.0:
+    resolution: {integrity: sha512-fbvWdpnDhu8oQNVAmRaRtVsyLyizYGY8NgvkLoypuHx5CqTsjiy7BoB2uuVQ4jFA+njQ+HO/xBtI/5XNL15TJA==}
+
+  cavijs@0.1.0:
+    resolution: {integrity: sha512-9rYRYW5yePP/cP0ZqZINzL4aKJU7+6u2j9F3/9eRMDrdd2nnyqv6m7D34kImOsYHnF+oMdNKSiFI8WQBwE/kzg==}
 
   chai@6.3.0:
     resolution: {integrity: sha512-XWAtwJ6OHO+tj0EKCs0Y2UamnyOxseZWltU4x2U2wh8g4AigdjwvtUjvLP2tqkA/avxHEtzxNaqGq/YGNwckKg==}
@@ -1365,6 +1371,12 @@ snapshots:
       ast-kit: 3.0.0
 
   birpc@2.9.0: {}
+
+  cavi@0.3.0: {}
+
+  cavijs@0.1.0:
+    dependencies:
+      cavi: 0.3.0
 
   chai@6.3.0: {}
 

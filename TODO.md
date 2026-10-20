@@ -32,9 +32,7 @@
 
 - [ ] Build as a library: `.d.ts`, `exports` in package.json, `vue` and `@vue-flow/core` as peer
       dependencies.
-- [ ] Publish: depends on cavijs through `link:../cavijs` (its `feat/bend-stiffness` branch,
-      itself on `link:../cavi/pkg`); first `cavi` 0.3.0 and a cavijs with `cavijs/core` and bend
-      stiffness published, then a version range here.
+- [ ] Publish (cavijs 0.1.0 and cavi 0.3.0, which it needs, are on npm).
 - [ ] End-to-end tests with Playwright on the demos (connect, move a plug, unplug, undo).
 - [ ] Demo on GitHub Pages.
 - [ ] Touch support, checked on mobile.

@@ -1,7 +1,7 @@
 # cavi-vue-flow
 
 [Vue Flow](https://vueflow.dev) edges drawn as physics cables, simulated by
-[cavijs](../cavijs) (`cavijs/core`, the engine without the page). Vue Flow keeps the graph —
+[cavijs](https://www.npmjs.com/package/cavijs) (`cavijs/core`, the engine without the page). Vue Flow keeps the graph —
 nodes, handles, `onConnect`, selection, state — and every edge becomes a cable that hangs, swings
 when its nodes move and settles. The connection line is a cable too, pulled out of its handle, and
 the very same cable becomes the edge once connected.
@@ -13,10 +13,10 @@ pnpm test       # CableWorld against the real WASM engine, in Node
 pnpm typecheck
 ```
 
-cavijs is linked from `../cavijs` (`link:../cavijs`) and needs its library built there
-(`pnpm build:lib`, on a branch with `cavijs/core`). Bending needs a `cavi` with
-`set_wire_bend_stiffness` (branch `feat/bend-stiffness` of `../cavi`, not published yet): cavijs's
-`feat/bend-stiffness` links it from `../cavi/pkg`.
+It depends on cavijs from npm (`^0.1.0`, with `cavijs/core`), which brings the `cavi` engine
+(`^0.3.0`, with bending stiffness). To try changes to either before they are published, link them
+instead: `"cavijs": "link:../cavijs"` (its library built there with `pnpm build:lib`), and in
+cavijs `"cavi": "link:../cavi/pkg"`.
 
 ## Usage
 

@@ -2,3 +2,6 @@ allowBuilds:
   esbuild: true
   # Picks its Vue 3 build at install time (a dependency of Vue Flow's).
   vue-demi: true
+minimumReleaseAgeExclude:
+  - cavi@0.3.0
+  - cavijs@0.1.0

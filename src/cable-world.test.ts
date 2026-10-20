@@ -1,5 +1,7 @@
 /// <reference types="node" />
-import { readFileSync } from 'node:fs';
+import { readFileSync, realpathSync } from 'node:fs';
+import { createRequire } from 'node:module';
+import { join } from 'node:path';
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { initWasm } from 'cavijs/core';
 import { CableWorld, type FrameScheduler } from './cable-world';
@@ -10,8 +12,11 @@ import { CableWorld, type FrameScheduler } from './cable-world';
  * the edge, dropped when nobody takes them.
  */
 beforeAll(async () => {
-  // The .wasm of the `cavi` that the linked cavijs resolves.
-  await initWasm(readFileSync('node_modules/cavijs/node_modules/cavi/cavi_bg.wasm'));
+  // The .wasm of the `cavi` that cavijs resolves, wherever the package
+  // manager put it (installed or linked).
+  const cavijs = realpathSync('node_modules/cavijs');
+  const wasm = createRequire(join(cavijs, 'package.json')).resolve('cavi/cavi_bg.wasm');
+  await initWasm(readFileSync(wasm));
 });
 
 afterEach(() => {
