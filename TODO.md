@@ -3,12 +3,16 @@
 ## Performance (measure on `/stress`)
 
 - [ ] Draw cables without Vue on every frame: write the `<path>`'s `d` attribute directly, or
-      draw every cable on one canvas under/over Vue Flow — today every cable updates a ref and
-      Vue diffs every path every frame.
-- [ ] Put the cables to sleep at rest: stop the animation loop when nothing moves, start it again
-      on the first interaction (zero CPU while idle).
+      draw every cable on one canvas under/over Vue Flow. Measured with 999 cables all swinging:
+      Vue's update of the edges takes about 2.6 ms a frame, the cables' tick 0.7 ms, and the page
+      keeps the display's refresh rate — worth it on slower machines, not needed yet. Replacing
+      BaseEdge would lose labels and markers.
+- [x] Put the cables to sleep at rest: the frame loop rests once every cable sleeps and wakes on
+      the next change (CableWorld.wake).
 - [ ] Skip simulating and drawing cables off screen (culling).
-- [ ] Stress page: physics milliseconds and render milliseconds shown apart.
+- [x] Stress page: the cables' milliseconds a frame, awake cables, whether the loop runs.
+- [ ] Stress page: the browser's own drawing time, apart (needs the Long Animation Frames API or a
+      trace).
 
 ## Patchbay
 

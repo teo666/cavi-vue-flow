@@ -66,8 +66,7 @@ export function provideCables(options: ProvideCablesOptions = {}): ShallowRef<Ca
       // Its internals are not reactive state: Vue must not proxy them.
       world.value = markRaw(created);
     },
-    (error: unknown) =>
-      console.error('cavi-vue-flow: the cavi WASM module failed to load.', error)
+    (error: unknown) => console.error('cavi-vue-flow: the cavi WASM module failed to load.', error)
   );
   onBeforeUnmount(() => {
     unmounted = true;

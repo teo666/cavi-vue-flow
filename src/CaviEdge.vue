@@ -103,7 +103,7 @@ function attach(): void {
   const adopted = world.adopt(sx, sy, tx, ty);
   cable = adopted ?? world.createCable(sx, sy, tx, ty, cableStyle.value);
   // Taken over from a connection line, it is this edge's thickness now.
-  if (adopted) adopted.wire.setRadius(cableStyle.value.radius ?? 5);
+  if (adopted) adopted.setRadius(cableStyle.value.radius ?? 5);
   cable.onPath = (d) => (path.value = d);
   pinEnds();
   path.value = cable.path;
@@ -146,7 +146,7 @@ onBeforeUnmount(() => {
 const radius = computed(() => cableStyle.value.radius ?? 5);
 // Live, also for a cable taken over from a connection line drawn from the
 // other end: thickness is drawn and simulated.
-watch(radius, (r) => cable?.wire.setRadius(r));
+watch(radius, (r) => cable?.setRadius(r));
 const plugRadius = computed(() => {
   const plug = props.data?.plug;
   if (!plug) return 0;

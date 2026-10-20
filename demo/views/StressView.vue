@@ -11,7 +11,7 @@ import { CaviConnectionLine, CaviEdge, CaviPointer, provideCables } from '../../
  * joins two neighbors: the boxes of the rows run right to left have their
  * input on the right.
  */
-provideCables({ friction: 0.9 });
+const cables = provideCables({ friction: 0.9 });
 
 /** A box's size, as Vue Flow's default node draws it. */
 const BOX_W = 150;
@@ -126,15 +126,32 @@ watch(gap, (now, before) => {
   moveBoxes(({ position: { x, y } }) => ({ x: Math.round(x * sx), y: Math.round(y * sy) }));
 });
 
-/** Frames per second, counted over half a second. */
-const fps = shallowRef(0);
+/**
+ * Every half second: the display's frames per second, the cables' frame
+ * loop — the time it spends a frame (simulation and paths, CableWorld.
+ * lastTickMs, before Vue and the browser draw them), how many cables are
+ * awake, and whether it runs at all: it rests once every cable is asleep.
+ */
+const stats = shallowRef({ fps: 0, tickMs: 0, awake: 0, running: false });
 let frames = 0;
+let ticks = 0;
+let tickTotal = 0;
 let since = performance.now();
 let frame = requestAnimationFrame(function count(now) {
   frames++;
+  const world = cables.value;
+  if (world?.running) {
+    ticks++;
+    tickTotal += world.lastTickMs;
+  }
   if (now - since >= 500) {
-    fps.value = Math.round((frames * 1000) / (now - since));
-    frames = 0;
+    stats.value = {
+      fps: Math.round((frames * 1000) / (now - since)),
+      tickMs: ticks ? tickTotal / ticks : 0,
+      awake: world?.awakeCount ?? 0,
+      running: world?.running ?? false,
+    };
+    frames = ticks = tickTotal = 0;
     since = now;
   }
   frame = requestAnimationFrame(count);
@@ -175,7 +192,11 @@ const edgeTypes = { cavi: markRaw(CaviEdge) };
           <input v-model.number="gap" type="range" min="10" max="400" step="5" />
           <span>{{ gap }} px</span>
         </label>
-        <span class="fps">{{ fps }} fps</span>
+        <span class="stats">
+          {{ stats.fps }} fps · cables {{ stats.tickMs.toFixed(2) }} ms/frame ·
+          {{ stats.awake }} awake ·
+          {{ stats.running ? 'loop running' : 'loop resting' }}
+        </span>
       </div>
     </header>
     <VueFlow
@@ -222,7 +243,7 @@ const edgeTypes = { cavi: markRaw(CaviEdge) };
   min-width: 44px;
   font-variant-numeric: tabular-nums;
 }
-.fps {
+.stats {
   margin-left: 4px;
   font-variant-numeric: tabular-nums;
   color: #9fd8e0;

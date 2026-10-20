@@ -69,7 +69,7 @@ function attach(): void {
   const adopted = world.adopt(sx, sy, tx, ty);
   cable = adopted ?? world.createCable(sx, sy, tx, ty, cableStyle.value);
   // An edge's cable carried on: the thickness of the handle it now comes out of.
-  if (adopted) adopted.wire.setRadius(cableStyle.value.radius ?? 5);
+  if (adopted) adopted.setRadius(cableStyle.value.radius ?? 5);
   cable.onPath = (d) => (path.value = d);
   // Its free end sits under the pointer: see Cable.hold.
   cable.hold(true);
@@ -106,7 +106,7 @@ onBeforeUnmount(() => {
 
 const radius = computed(() => cableStyle.value.radius ?? 5);
 // An edge's cable carried on keeps being drawn and simulated at this thickness.
-watch(radius, (r) => cable?.wire.setRadius(r));
+watch(radius, (r) => cable?.setRadius(r));
 const plugRadius = computed(() => {
   if (!props.plug) return 0;
   return props.plug === true ? radius.value + 4 : props.plug;

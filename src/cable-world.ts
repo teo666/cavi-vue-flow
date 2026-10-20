@@ -191,6 +191,14 @@ export class Cable {
       : [sourceDirection, targetDirection];
     this.direct(0, d0);
     this.direct(1, d1);
+    this.owner.wake();
+  }
+
+  /** Sets the cable's thickness (its collision radius in the simulation). */
+  setRadius(radius: number): void {
+    if (this.disposed || this.wire.getRadius() === radius) return;
+    this.wire.setRadius(radius);
+    this.owner.wake();
   }
 
   /** Whether the end at (x, y) is this cable's first node — see CableWorld.adopt. */
@@ -215,6 +223,7 @@ export class Cable {
     if (this.disposed) return;
     if (held) this.owner.world.holdWire(this.wire);
     else this.owner.world.releaseHeldWire(this.wire);
+    this.owner.wake();
   }
 
   /** Deletes the cable from the simulation. Idempotent. */
@@ -264,6 +273,12 @@ export class Cable {
  * SVG, so there is no transform to keep in step. Plain TypeScript: the Vue
  * side (provideCables/useCables, CaviEdge, CaviConnectionLine) is a thin
  * layer over it.
+ *
+ * The loop rests while nothing moves: once the engine has put every cable
+ * to sleep (still for half a second), no frame is requested until
+ * something changes — a cable created, an end moved, the pointer moving —
+ * so an idle graph costs nothing. Changing the cavijs World or a Wire
+ * directly bypasses that: call wake() afterwards.
  */
 export class CableWorld {
   readonly world: World;
@@ -274,7 +289,17 @@ export class CableWorld {
   private scheduler: FrameScheduler | null = null;
   private frameHandle = 0;
   private lastFrame: number | null = null;
+  /** Started, but no frame requested: every cable asleep (see wake). */
+  private resting = false;
+  /**
+   * Physics steps since the loop last woke up. It rests only after one: the
+   * engine wakes the cables near the pointer during a step, and the first
+   * frame after waking up runs none (no time elapsed yet).
+   */
+  private stepsSinceWake = 0;
   private destroyed = false;
+  /** How long the last tick took, simulation and paths, in ms (see tick). */
+  lastTickMs = 0;
 
   /** Loads the cavi WASM module (once per page) and creates a world. */
   static async create(options: CableWorldOptions = {}): Promise<CableWorld> {
@@ -308,6 +333,7 @@ export class CableWorld {
   createCable(sx: number, sy: number, tx: number, ty: number, style: CableStyle = {}): Cable {
     const cable = new Cable(this, { ...this.style, ...style }, sx, sy, tx, ty);
     this.cables.set(cable.wire, cable);
+    this.wake();
     return cable;
   }
 
@@ -354,31 +380,65 @@ export class CableWorld {
   /** The pointer is at (x, y), in flow coordinates: cables near it are pushed away. */
   setPointer(x: number, y: number): void {
     this.world.setMouse(x, y);
+    // The engine wakes the cables the pointer comes near.
+    this.wake();
   }
 
   /** The pointer left: nothing pushes cables any more. */
   releasePointer(): void {
     this.world.releaseMouse();
+    this.wake();
   }
 
   /** Starts the frame loop (requestAnimationFrame unless told otherwise). Idempotent. */
   start(scheduler: FrameScheduler = ANIMATION_FRAMES): void {
     if (this.scheduler || this.destroyed) return;
     this.scheduler = scheduler;
-    this.lastFrame = null;
-    const frame = (now: number): void => {
-      const elapsed = this.lastFrame === null ? 0 : now - this.lastFrame;
-      this.lastFrame = now;
-      this.tick(elapsed);
-      this.frameHandle = scheduler.request(frame);
-    };
-    this.frameHandle = scheduler.request(frame);
+    this.request();
   }
 
   stop(): void {
-    this.scheduler?.cancel(this.frameHandle);
+    if (!this.resting) this.scheduler?.cancel(this.frameHandle);
     this.scheduler = null;
+    this.resting = false;
   }
+
+  /**
+   * Starts the loop again if it is resting (every cable asleep): what every
+   * change made through CableWorld and Cable does. Call it after changing
+   * the cavijs World or a Wire directly.
+   */
+  wake(): void {
+    if (!this.resting || !this.scheduler || this.destroyed) return;
+    this.request();
+  }
+
+  /** Whether the loop is running: started, and not resting with every cable asleep. */
+  get running(): boolean {
+    return this.scheduler !== null && !this.resting;
+  }
+
+  /** How many cables the engine is simulating: the others are asleep. */
+  get awakeCount(): number {
+    return this.world.getWiresView().length - this.world.getSleepingWireCount();
+  }
+
+  private request(): void {
+    this.resting = false;
+    this.stepsSinceWake = 0;
+    this.lastFrame = null; // no time owed for the frames not run
+    this.frameHandle = this.scheduler!.request(this.frame);
+  }
+
+  private readonly frame = (now: number): void => {
+    const elapsed = this.lastFrame === null ? 0 : now - this.lastFrame;
+    this.lastFrame = now;
+    this.tick(elapsed);
+    if (this.destroyed || !this.scheduler) return;
+    // A parked cable is removed on a timer, not on a frame: no need to wait.
+    if (this.stepsSinceWake > 0 && this.awakeCount === 0) this.resting = true;
+    else this.frameHandle = this.scheduler.request(this.frame);
+  };
 
   /**
    * One frame: advances the simulation by `elapsedMs` and hands every cable
@@ -387,7 +447,8 @@ export class CableWorld {
    */
   tick(elapsedMs: number): void {
     if (this.destroyed) return;
-    this.world.advance(elapsedMs);
+    const start = performance.now();
+    this.stepsSinceWake += this.world.advance(elapsedMs);
     forEachWireRender(this.world, ({ wire, path, renderType, record }) => {
       const cable = this.cables.get(wire);
       if (!cable || sameValues(cable.drawn, record)) return;
@@ -395,6 +456,7 @@ export class CableWorld {
       cable.path = svgPathData(path, renderType);
       cable.onPath?.(cable.path);
     });
+    this.lastTickMs = performance.now() - start;
   }
 
   /** Stops the loop and frees the simulation. Idempotent. */

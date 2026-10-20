@@ -159,8 +159,20 @@ their radius along the handle's side, are moved back onto the sockets with CSS.
 Flow coordinates are cavijs world coordinates: edges live inside Vue Flow's transformed SVG, so
 pan and zoom need nothing. Each frame `CableWorld.tick` advances the cavijs `World` and walks its
 render buffer once (`forEachWireRender`); a cable whose record changed gets new SVG path data
-(`svgPathData`) and its edge re-renders — sleeping cables cost nothing. Cables grow and shorten
-with `Wire.growTo`/`shrinkTo`, so the nodes already there keep their motion.
+(`svgPathData`) and its edge re-renders. Cables grow and shorten with `Wire.growTo`/`shrinkTo`,
+so the nodes already there keep their motion.
+
+The engine puts a cable to sleep once it has been still for half a second, and the frame loop
+rests once every cable sleeps: no frame is requested until something changes — a cable created,
+an end moved (a node dragged), a cable's thickness (`Cable.setRadius`), the pointer moving, which
+wakes the cables it comes near. An idle graph costs nothing. Changing the cavijs `World` or a
+`Wire` directly bypasses that: call `CableWorld.wake()` afterwards. `running`, `awakeCount` and
+`lastTickMs` (simulation and paths, before Vue and the browser draw them) say what the loop is
+doing; `/stress` shows them.
+
+Measured on `/stress` with 1000 boxes (999 cables, about 5000 nodes) all swinging: the cables'
+tick takes about 0.7 ms a frame and Vue's update of the edges about 2.6 ms; the page keeps the
+display's refresh rate (75 fps here).
 
 ## Not done yet
 

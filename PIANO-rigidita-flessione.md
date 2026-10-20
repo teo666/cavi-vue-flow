@@ -52,7 +52,7 @@ esce dall'handle nella direzione giusta e curva gradualmente. Senza direzione, n
 | -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `cavi` (`WasmWorld`) | `set_wire_bend_stiffness(idx, k)`, `get_wire_bend_stiffness(idx)`, `set_wire_end_direction(idx, end, dx, dy)` (`(0, 0)` la toglie), `get_wire_end_direction_x/y(idx, end)`. Ogni modifica sveglia il cavo (`invalidate`). |
 | cavijs (`Wire`)      | `setBendStiffness(k)`, `getBendStiffness()`, `setEndDirection(0 \| 1, { x, y } \| null)`, `getEndDirection(end)`. Forse un attributo `bend` su `<cavi-wire>`. Esportati anche da `cavijs/core`.                           |
-| cavi-vue-flow      | `CableStyle.bendStiffness` (default da regolare, circa 0,3); la direzione di ogni capo dalla `Position` dell'handle (`directionOf`, da rimettere); la connection line solo sul capo di partenza.                          |
+| cavi-vue-flow        | `CableStyle.bendStiffness` (default da regolare, circa 0,3); la direzione di ogni capo dalla `Position` dell'handle (`directionOf`, da rimettere); la connection line solo sul capo di partenza.                          |
 
 ## Passi
 

@@ -197,6 +197,7 @@ describe('CableWorld — frame loop', () => {
       cancel: vi.fn(),
     };
     const world = new CableWorld();
+    world.createCable(0, 0, 200, 0); // something to simulate
     const tick = vi.spyOn(world, 'tick');
 
     world.start(scheduler);
@@ -208,6 +209,82 @@ describe('CableWorld — frame loop', () => {
     world.stop();
     expect(scheduler.cancel).toHaveBeenCalled();
     world.destroy();
+    world.destroy();
+  });
+
+  /** A scheduler run by hand: frame() runs the frame requested, if any, 1/60 s later. */
+  function manualScheduler() {
+    let pending: ((now: number) => void) | null = null;
+    let now = 0;
+    const scheduler: FrameScheduler = {
+      request: (cb) => {
+        pending = cb;
+        return 1;
+      },
+      cancel: () => (pending = null),
+    };
+    return {
+      scheduler,
+      get pending() {
+        return pending !== null;
+      },
+      /** Runs frames until the loop rests (or `limit`); how many ran. */
+      runUntilRest(limit = 2000): number {
+        let n = 0;
+        while (pending && n < limit) {
+          const cb = pending;
+          pending = null;
+          cb((now += 1000 / 60));
+          n++;
+        }
+        return n;
+      },
+    };
+  }
+
+  it('rests once every cable is asleep, and wakes when something changes', () => {
+    const frames = manualScheduler();
+    const world = new CableWorld({ friction: 0.85 });
+    const cable = world.createCable(0, 0, 200, 0);
+    world.start(frames.scheduler);
+    expect(world.running).toBe(true);
+
+    const settled = frames.runUntilRest();
+    expect(settled).toBeLessThan(2000);
+    expect([world.running, world.awakeCount, frames.pending]).toEqual([false, 0, false]);
+
+    cable.setEnds(0, 0, 260, 40); // an end moved: the cable swings again
+    expect([world.running, frames.pending]).toEqual([true, true]);
+    expect(world.awakeCount).toBe(1);
+    frames.runUntilRest();
+
+    // The pointer on the cable: woken up by the engine during the next step,
+    // pushed away, settled again.
+    world.setPointer(130, 30);
+    expect(world.running).toBe(true);
+    expect(frames.runUntilRest()).toBeGreaterThan(30);
+
+    cable.setRadius(9);
+    expect(world.running).toBe(true);
+    frames.runUntilRest();
+    cable.setRadius(9); // no change: nothing to wake
+    expect(world.running).toBe(false);
+
+    world.createCable(0, 100, 200, 100);
+    expect(world.running).toBe(true);
+    world.destroy();
+  });
+
+  it('can be stopped and started again while resting', () => {
+    const frames = manualScheduler();
+    const world = new CableWorld();
+    world.start(frames.scheduler); // nothing to simulate: rests after its first step
+    expect(frames.runUntilRest()).toBe(2);
+    world.stop();
+    world.createCable(0, 0, 200, 0);
+    expect(frames.pending).toBe(false); // stopped: waking requests nothing
+    world.start(frames.scheduler);
+    expect(world.running).toBe(true);
     world.destroy();
   });
 });
