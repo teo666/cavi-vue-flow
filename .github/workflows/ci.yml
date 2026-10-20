@@ -1,0 +1,50 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Format
+        run: pnpm format:check
+      - name: Type-check
+        run: pnpm typecheck
+      - name: Unit tests
+        run: pnpm test
+      - name: Build the demo
+        run: pnpm build
+      # Google Chrome is preinstalled on GitHub's Ubuntu runners, which is
+      # what playwright.config.ts uses (channel: 'chrome').
+      - name: End-to-end tests
+        run: pnpm test:e2e
+      - name: Upload the Playwright report
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: |
+            playwright-report
+            test-results
+          retention-days: 7
