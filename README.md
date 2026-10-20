@@ -1,5 +1,7 @@
 # cavi-vue-flow
 
+[![The patchbay demo: a module dragged, its cables swinging; a new cable pulled out of a jack and plugged into another](media/patchbay.gif)](https://teo666.github.io/cavi-vue-flow/patchbay)
+
 [Vue Flow](https://vueflow.dev) edges drawn as physics cables, simulated by
 [cavijs](https://www.npmjs.com/package/cavijs) (`cavijs/core`, the engine without the page). Vue Flow keeps the graph —
 nodes, handles, `onConnect`, selection, state — and every edge becomes a cable that hangs, swings
