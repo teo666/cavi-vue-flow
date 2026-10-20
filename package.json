@@ -29,5 +29,6 @@
     "vitest": "^4.1.12",
     "vue-router": "^5.4.0",
     "vue-tsc": "^3.3.13"
-  }
+  },
+  "license": "MIT"
 }

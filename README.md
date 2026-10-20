@@ -189,3 +189,7 @@ display's refresh rate (75 fps here).
   unmounts (a layer in the `#zoom-pane` slot could).
 - Edge labels (`labelX`/`labelY` on the cable's middle), updatable edges (`onEdgeUpdate`).
 - A library build (`dist`, types) and publishing; for now the demo imports `src/` directly.
+
+## License
+
+MIT — see [LICENSE](LICENSE).
