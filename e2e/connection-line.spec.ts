@@ -87,7 +87,17 @@ test('a cable is still selected by a click anywhere away from its handles', asyn
     })
     .toBeLessThan(0.5);
 
-  await page.mouse.click(last.middle.x, last.middle.y);
+  // What the pointer would hit there is the cable's interaction path (not
+  // clipped out away from the handles). Checked without moving the real
+  // mouse: CaviPointer pushes cables away from it, so on a slow machine the
+  // cable could be gone from under a real click.
+  const hit = await page.evaluate(({ x, y }) => {
+    const el = document.elementFromPoint(x, y);
+    if (!el?.classList.contains('vue-flow__edge-interaction')) return null;
+    el.dispatchEvent(new MouseEvent('click', { bubbles: true, clientX: x, clientY: y }));
+    return el.closest('.vue-flow__edge')?.getAttribute('data-id') ?? null;
+  }, last.middle);
+  expect(hit).toBe(last.id);
 
   await expect(page.locator(`.vue-flow__edge[data-id="${last.id}"]`)).toHaveClass(/selected/);
 });
